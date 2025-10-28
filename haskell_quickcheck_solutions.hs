@@ -317,18 +317,29 @@ diffVar (Var y) x
   | x == y = Num 1
   | otherwise = Num 0
 
--- Conta variáveis em uma expressão
-countVars :: ExprVar -> Int
-countVars (Num _) = 0
-countVars (Var _) = 1
-countVars (AddVar a b) = countVars a + countVars b
-countVars (MulVar a b) = countVars a + countVars b
+-- Coleta variáveis únicas em uma expressão
+uniqueVars :: ExprVar -> [Name]
+uniqueVars (Num _) = []
+uniqueVars (Var x) = [x]
+uniqueVars (AddVar a b) = uniqueVars a ++ uniqueVars b
+uniqueVars (MulVar a b) = uniqueVars a ++ uniqueVars b
 
--- 5.a: Propriedade - derivada não adiciona novas variáveis
+-- Remove duplicatas de uma lista
+nub :: Eq a => [a] -> [a]
+nub [] = []
+nub (x:xs) = x : nub (filter (/= x) xs)
+
+-- 5.a: Propriedade - derivada não introduz NOVAS variáveis (apenas as que já existiam)
+-- A derivada pode aumentar o NÚMERO de ocorrências, mas não adiciona variáveis diferentes
 prop_DiffNoNewVars :: ExprVar -> Bool
-prop_DiffNoNewVars e = countVars (diffVar e "x") <= countVars e
+prop_DiffNoNewVars e = 
+  let originalVars = nub (uniqueVars e)
+      derivedVars = nub (uniqueVars (diffVar e "x"))
+  in all (`elem` originalVars) derivedVars
+
 -- O oposto NÃO é verdade: a derivada pode remover variáveis
--- Exemplo: diffVar (Num 5) "x" = Num 0 tem 0 variáveis, menos que Num 5
+-- Exemplo: diffVar (Num 5) "x" = Num 0 não tem variáveis
+-- Outro exemplo: diffVar (Var "y") "x" = Num 0 remove a variável "y"
 
 -- 5.b: Função simplify
 simplify :: ExprVar -> ExprVar
