@@ -114,17 +114,11 @@ flattenSet (Set tree) = flattenTree tree
 -- QUESTÃO 1: Propriedades QuickCheck para BSTree
 -- ============================================================================
 
--- Gerador para BSTree
+-- Gerador para BSTree - gera árvores válidas usando insertTree
 genBSTree :: (Ord a, Arbitrary a) => Int -> Gen (BSTree a)
-genBSTree 0 = return nil
-genBSTree n = frequency
-  [ (1, return nil)
-  , (4, do
-      x <- arbitrary
-      left <- genBSTree (n `div` 2)
-      right <- genBSTree (n `div` 2)
-      return (node x left right))
-  ]
+genBSTree n = do
+  list <- vectorOf n arbitrary
+  return (foldl (flip insertTree) nil list)
 
 instance (Ord a, Arbitrary a) => Arbitrary (BSTree a) where
   arbitrary = sized genBSTree
